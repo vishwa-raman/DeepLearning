@@ -55,6 +55,7 @@ int main(int argc, char** argv) {
   double trainingFraction = 0;
   double validationFraction = 0;
   double additionalValidationFraction = 0;
+  double additionalTestFraction = 0;
   map<int, bool> statusFilter;
   map<int, bool> intersectionFilter;
   double binaryThreshold = 1;
@@ -80,6 +81,8 @@ int main(int argc, char** argv) {
       useBins = true;
     else if (!strcmp(argv[i], "-av"))
       additionalValidationFraction = atof(argv[i + 1]);
+    else if (!strcmp(argv[i], "-at"))
+      additionalTestFraction = atof(argv[i + 1]);
     else if (!strcmp(argv[i], "-b")) {
       binaryThreshold = atof(argv[i + 1]);
       inBinaryFormat = true;
@@ -88,7 +91,8 @@ int main(int argc, char** argv) {
 	"Usage: xmlToIDX -o <outputFileName> -r <training_fraction> -v <validation_fraction>" <<
 	" -status <statusFilter> -inter <intersectionFilter> [-d <trainingDirectory>]+" << 
 	" [-b binaryThreshold] [-usebins] [-f testAnnotationFileName]" <<
-	" [-av <validation_fraction_for_additional_test_files>] [-h for usage]" << endl;
+	" [-av <validation_fraction_for_additional_test_files>]" <<
+	" [-at <test_fraction_for_additional_test_files>] [-h for usage]" << endl;
       return 0;
     }
   }
@@ -98,7 +102,8 @@ int main(int argc, char** argv) {
       "Usage: xmlToIDX -o <outputFileName> -r <training_fraction> -v <validation_fraction>" <<
       " -status <statusFilter> -inter <intersectionFilter> [-d <trainingDirectory>]+" << 
       " [-b binaryThreshold] [-usebins] [-f testAnnotationFileName]" <<
-      " [-av <validation_fraction_for_additional_test_files>] [-h for usage]" << endl;
+      " [-av <validation_fraction_for_additional_test_files>]" <<
+      " [-at <test_fraction_for_additional_test_files>] [-h for usage]" << endl;
     return -1;
   }
 
@@ -121,7 +126,8 @@ int main(int argc, char** argv) {
     for (unsigned int i = 0; i < dataDirs.size(); i++)
       preprocess.addTrainingSet(dataDirs[i]);
     for (unsigned int i = 0; i < testAnnotations.size(); i++)
-      preprocess.addTestSet(testAnnotations[i], additionalValidationFraction);
+      preprocess.addTestSet(testAnnotations[i], additionalValidationFraction,
+			    additionalTestFraction);
 
     if (useBins)
       preprocess.generate(trainingFraction, validationFraction);

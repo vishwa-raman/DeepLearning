@@ -82,7 +82,8 @@ class Preprocess {
 
   // main methods
   virtual void addTrainingSet(string trainingDirectory);
-  virtual void addTestSet(string annotationsFileName, double validationFraction);
+  virtual void addTestSet(string annotationsFileName, 
+			  double validationFraction, double testFraction);
   virtual void setAffineTransforms() {
     doAffineTransforms = true;
   }

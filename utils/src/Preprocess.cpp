@@ -179,7 +179,8 @@ void Preprocess::addTrainingSet(string trainingDirectory) {
 // should be used for validation in that set. The remainder are treated as 
 // part of the test set.
 
-void Preprocess::addTestSet(string annotationsFileName, double validationFraction) {
+void Preprocess::addTestSet(string annotationsFileName, 
+			    double validationFraction, double testFraction) {
   Annotations annotations;
 
   // first capture the mapping from file names to locations of interest
@@ -191,12 +192,12 @@ void Preprocess::addTestSet(string annotationsFileName, double validationFractio
   // get the window center
   CvPoint& center = annotations.getCenter();
 
-
   // now get the set of all annotations
   vector<FrameAnnotation*>& frameAnnotations = annotations.getFrameAnnotations();
   random_shuffle(frameAnnotations.begin(), frameAnnotations.end());
 
   unsigned int nValidationLength = validationFraction * frameAnnotations.size();
+  unsigned int nTestLength = testFraction * frameAnnotations.size();
 
   for (unsigned int i = 0; i < frameAnnotations.size(); i++) {
     FrameAnnotation* fa = frameAnnotations[i];
@@ -210,7 +211,7 @@ void Preprocess::addTestSet(string annotationsFileName, double validationFractio
     string fileName = framesDirectory + "/" + simpleName;
     if (i < nValidationLength)
       fileToAnnotationsForValidation.push_back(make_pair(fileName, new FrameAnnotation(*fa)));
-    else
+    else if (i < nValidationLength + nTestLength)
       fileToAnnotationsForTest.push_back(make_pair(fileName, new FrameAnnotation(*fa)));
   }
 }
