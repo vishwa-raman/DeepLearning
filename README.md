@@ -41,26 +41,25 @@ following values,
 Given a video of the driver, an annotation file for that video has the
 following format,
 
-<?xml version="1.0"?>
-<annotations dir="/media/CESAR-EXT02/VCode/CESAR_May-Fri-11-11-00-50-2012" center="350,20
-0">
-  <frame>
-    <frameNumber>1</frameNumber>
-    <face>0,0</face>
-    <zone>9</zone>
-    <status>1</status>
-    <intersection>4</intersection>
-  </frame>
-  <frame>
-    <frameNumber>2</frameNumber>
-    <face>0,0</face>
-    <zone>9</zone>
-    <status>1</status>
-    <intersection>4</intersection>
-  </frame>
-  ...
-  ...
-</annotations>
+	<?xml version="1.0"?>
+	<annotations dir="/media/CESAR-EXT02/VCode/CESAR_May-Fri-11-11-00-50-2012" center="350,200">
+	  <frame>
+	    <frameNumber>1</frameNumber>
+	    <face>0,0</face>
+	    <zone>9</zone>
+	    <status>1</status>
+	    <intersection>4</intersection>
+	  </frame>
+	  <frame>
+	    <frameNumber>2</frameNumber>
+	    <face>0,0</face>
+	    <zone>9</zone>
+	    <status>1</status>
+	    <intersection>4</intersection>
+	  </frame>
+	  ...
+	  ...
+	</annotations>
 
 where, the directory is expected to contain frames from the video with the
 following filenames "frame_<frameNumber>.png". Each video frame is a
