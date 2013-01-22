@@ -6,7 +6,7 @@
 int Globals::imgWidth = 640;
 int Globals::imgHeight = 480;
 int Globals::roiWidth = 500;
-int Globals::roiHeight = 300;
+int Globals::roiHeight = 350;
 int Globals::maxDistance = 100;
 int Globals::maxAngle = 180;
 int Globals::maxArea = 200;
@@ -21,7 +21,7 @@ int Globals::midBufferSize = 256;
 int Globals::largeBufferSize = 1024;
 int Globals::nSequenceLength = 600;
 
-unsigned Globals::numZones = 3;
+unsigned Globals::numZones = 5;
 
 double Globals::learningRate = 0.125;
 double Globals::initialGaussianScale = 0.5;

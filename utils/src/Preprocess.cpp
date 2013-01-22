@@ -51,6 +51,11 @@ Preprocess::Preprocess(string output, CvSize size, double scale, CvPoint& center
   windowCenter.x = center.x;
   windowCenter.y = center.y;
 
+  // Now compute a window around the center 
+  double xSpread = imgSize.width * Globals::windowXScale;
+  double ySpread = imgSize.height * Globals::windowYScale;
+  window = createWindow(windowCenter, xSpread, ySpread);
+
   //  cvNamedWindow("window", CV_WINDOW_NORMAL | CV_WINDOW_AUTOSIZE);
 }
 
@@ -74,6 +79,11 @@ Preprocess::Preprocess(CvSize size, double scale, CvPoint& center,
   windowCenter.x = center.x;
   windowCenter.y = center.y;
 
+  // Now compute a window around the center 
+  double xSpread = imgSize.width * Globals::windowXScale;
+  double ySpread = imgSize.height * Globals::windowYScale;
+  window = createWindow(windowCenter, xSpread, ySpread);
+
   //  cvNamedWindow("window", CV_WINDOW_NORMAL | CV_WINDOW_AUTOSIZE);
 }
 
@@ -81,6 +91,7 @@ Preprocess::~Preprocess() {
   cvReleaseImage(&realImg);
   cvReleaseImage(&tempImg);
   fftw_free(imageBuffer);
+  fftw_free(window);
 
   for (unsigned int i = 0; i < fileToAnnotations.size(); i++)
     delete fileToAnnotations[i].second;
@@ -133,9 +144,9 @@ void Preprocess::addTrainingSet(string trainingDirectory) {
   for (unsigned int i = 0; i < frameAnnotations.size(); i++) {
     FrameAnnotation* fa = frameAnnotations[i];
 
-    //  CvPoint faceCenter = fa->getFace();
-    //  if (!faceCenter.x && !faceCenter.y)
-    fa->setFace(center);
+    CvPoint faceCenter = fa->getFace();
+    if (!faceCenter.x && !faceCenter.y)
+      fa->setFace(center);
 
     // collect transition counts
     if (prev) {
@@ -202,7 +213,9 @@ void Preprocess::addTestSet(string annotationsFileName,
   for (unsigned int i = 0; i < frameAnnotations.size(); i++) {
     FrameAnnotation* fa = frameAnnotations[i];
 
-    fa->setFace(center);
+    CvPoint faceCenter = fa->getFace();
+    if (!faceCenter.x && !faceCenter.y)
+      fa->setFace(center);
 
     // compose filename and update map
     char buffer[256];
@@ -606,9 +619,9 @@ void Preprocess::update(string filename, FrameAnnotation* fa, int& samples) {
       }
       imageData += step / sizeof(unsigned char) - imgSize.width;
     }
-    //  cvNamedWindow("grayScaleImage", CV_WINDOW_NORMAL | CV_WINDOW_AUTOSIZE);
-    //  cvShowImage("grayScaleImage", processedImage);
-    //  cvWaitKey(1);
+    //    cvNamedWindow("grayScaleImage", CV_WINDOW_NORMAL | CV_WINDOW_AUTOSIZE);
+    //    cvShowImage("grayScaleImage", processedImage);
+    //    cvWaitKey(1);
 
     CvSize scaledSize;
     scaledSize.width = (unsigned int)imgSize.width * scaleFactor;
@@ -619,7 +632,7 @@ void Preprocess::update(string filename, FrameAnnotation* fa, int& samples) {
     cvResize(processedImage, scaledImage);
     //    cvNamedWindow("scaledImage", CV_WINDOW_NORMAL | CV_WINDOW_AUTOSIZE);
     //    cvShowImage("scaledImage", scaledImage);
-    //    cvWaitKey(1);
+    //    cvWaitKey();
     cvReleaseImage(&processedImage);
 
     samples++;
@@ -704,8 +717,7 @@ IplImage* Preprocess::generateImageVector(IplImage* image) {
       if (preImage[i * imgSize.width + j] > 1)
 	cout << "(" << i << ", " << j << ") = " << preImage[i * imgSize.width + j] << endl;
       double d = preImage[i * imgSize.width + j];
-      unsigned char c = (unsigned char)(d * 255);
-      (*imageData++) = ((double)c) / 255.0;
+      (*imageData++) = d;
     }
     imageData += step / sizeof(double) - imgSize.width;
   }
@@ -717,9 +729,9 @@ IplImage* Preprocess::generateImageVector(IplImage* image) {
   IplImage* scaledImage = cvCreateImage(scaledSize, processedImage->depth, 
 					processedImage->nChannels);
   cvResize(processedImage, scaledImage);
-  //  cvNamedWindow("scaledImage", CV_WINDOW_NORMAL | CV_WINDOW_AUTOSIZE);
-  //  cvShowImage("scaledImage", scaledImage);
-  //  cvWaitKey(1);
+  cvNamedWindow("scaledImage", CV_WINDOW_NORMAL | CV_WINDOW_AUTOSIZE);
+  cvShowImage("scaledImage", scaledImage);
+  cvWaitKey();
   cvReleaseImage(&processedImage);
 
   size.height = 1;
@@ -814,7 +826,10 @@ double* Preprocess::preprocessImage(IplImage* inputImg) {
   scale = 1.0 / max;
   cvConvertScale(realImg, realImg, scale, 0);
 
-  double* destImageData = imageBuffer;
+  // Apply the window
+  applyWindow(realImg, window, imageBuffer);
+
+  /*  double* destImageData = imageBuffer;
   double* srcImageData = (double*)realImg->imageData;
   for (int i = 0; i < imgSize.height; i++) {
     for (int j = 0; j < imgSize.width; j++) {
@@ -822,7 +837,7 @@ double* Preprocess::preprocessImage(IplImage* inputImg) {
       srcImageData++; destImageData++;
     }
     srcImageData += step / sizeof(double) - imgSize.width;
-  }
+    }*/
   //  showRealImage("preprocessedImage", imageBuffer);
 
   if (releaseImage)
@@ -896,3 +911,94 @@ void Preprocess::destroyAffineTransforms(vector<ImgLocPairT>& imgLocPairs) {
     cvReleaseImage(&(imgLocPairs[i].first));
   imgLocPairs.clear();
 }
+
+// createWindow
+// Method to create a window around a given location to drop the value of 
+// the pixels all around the area of interest in the image. The size of the 
+// field is the same as the filter size. The spread parameters are used to 
+// define the spread of the hot spot on the image plane. Pixels close to 
+// location have the highest values and those beyond the spread rapidly go 
+// to zero
+
+double* Preprocess::createWindow(CvPoint& location, double xSpread, double ySpread) {
+  // Linear space vector. Create a meshgrid with x and y axes values
+  // that stradle the location
+
+  double xspacer[imgSize.width];
+  double yspacer[imgSize.height];
+
+  int lx = location.x;
+  double left = -lx;
+  for (int i = 0; i < imgSize.width; i++) {
+    xspacer[i] = left;
+    left += 1.0;
+  }
+  int ly = location.y;
+  double top = -ly;
+  for (int i = 0; i < imgSize.height; i++) {
+    yspacer[i] = top;
+    top += 1.0;
+  }
+
+  // Mesh grid
+  double x[imgSize.height][imgSize.width];
+  double y[imgSize.height][imgSize.width];
+
+  for (int i = 0; i < imgSize.height; i++) {
+    for (int j = 0; j < imgSize.width; j++) {
+      x[i][j] = xspacer[j];
+      y[i][j] = yspacer[i];
+    }
+  }
+
+  // create a gaussian as big as the image
+  double gaussian[imgSize.height][imgSize.width];
+
+  double det = xSpread * ySpread;
+
+  for (int i = 0; i < imgSize.height; i++) {
+    for (int j = 0; j < imgSize.width; j++) {
+      // using just the gaussian kernel
+      double X = x[i][j] * x[i][j];
+      double Y = y[i][j] * y[i][j];
+      gaussian[i][j] = exp(-((X * ySpread + Y * xSpread) / det));
+    }
+  }
+
+  double* window = (double*)fftw_malloc(sizeof(double) * length);
+
+  // now initialize a real array as large as the image array with the values
+  // of the gaussian
+  for (int i = 0; i < length; i++)
+    window[i] = 0;
+  for (int i = 0; i < imgSize.height; i++) {
+    for (int j = 0; j < imgSize.width; j++) {
+      window[i * imgSize.width + j] = gaussian[i][j];
+    }
+  }
+
+  //  showRealImage("__window", window);
+
+  return window;
+}
+
+// applyWindow
+// Method used to apply a window function to a real image. It takes as input
+// the real image source and a window as a 2d real array. The result is stored in
+// the third parameter, the source and the destination can be the same. The step
+// is expected to match in the src and dest images
+
+void Preprocess::applyWindow(IplImage* src, double* window, double* dest) {
+  int step = src->widthStep;
+
+  double* destImageData = dest;
+  double* srcImageData = (double*)src->imageData;
+  for (int i = 0; i < imgSize.height; i++) {
+    for (int j = 0; j < imgSize.width; j++) {
+      (*destImageData) = (*srcImageData) * window[i * imgSize.width + j];
+      srcImageData++; destImageData++;
+    }
+    srcImageData += step / sizeof(double) - imgSize.width;
+  }
+}
+

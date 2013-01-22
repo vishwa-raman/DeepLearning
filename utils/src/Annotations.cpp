@@ -80,12 +80,14 @@ Annotations::Tag Annotations::getData(string str, CvPoint& point) {
     } else if (!strcmp(token, "zone")) {
       token = strtok(NULL, " <>");
       point.x = (token)? atoi(token) : 0;
+      /*
       if (point.x == 2) 
 	point.x = 1;
       else if (point.x == 3)
 	point.x = 2;
       else if (point.x == 4 || point.x == 5)
       point.x = 3;
+      */
       return Orientation;
     } else if (!strcmp(token, "status")) {
       token = strtok(NULL, " <>");

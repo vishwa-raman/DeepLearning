@@ -139,6 +139,8 @@ class Preprocess {
   void update(string filename, FrameAnnotation* fa, int& samples);
   vector<ImgLocPairT>& getAffineTransforms(IplImage* image, CvPoint& location);
   void destroyAffineTransforms(vector<ImgLocPairT>& imgLocPairs);
+  double* createWindow(CvPoint& location, double xSpread, double ySpread);
+  void applyWindow(IplImage* src, double* window, double* dest);
 
   // if the following is set then for each update operation during
   // filter generation, we take a set of affine transformations of
@@ -150,6 +152,7 @@ class Preprocess {
   // images using affine transformations for filter update
   vector<ImgLocPairT> transformedImages;
 
+  double* window;
   IplImage* realImg;
   IplImage* tempImg;
   double* imageBuffer;

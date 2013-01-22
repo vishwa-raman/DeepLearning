@@ -115,8 +115,7 @@ int main(int argc, char** argv) {
   size.width = Globals::roiWidth;
   size.height = Globals::roiHeight;
 
-  double scale = 1;
-  scale *= 0.33;
+  double scale = 0.3;
 
   try {
     Preprocess preprocess(outputFileName, size, scale, center,

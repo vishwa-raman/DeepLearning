@@ -195,8 +195,7 @@ int main(int argc, char** argv) {
   size.width = Globals::roiWidth;
   size.height = Globals::roiHeight;
 
-  double scale = 1;
-  scale *= 0.33;
+  double scale = 0.3;
 
   try {
     loadModel(modelsFileName);
@@ -224,13 +223,10 @@ int main(int argc, char** argv) {
       vector<FrameAnnotation*>& frameAnnotations = annotations.getFrameAnnotations();
       for (unsigned int i = 0; i < frameAnnotations.size(); i++) {
 	FrameAnnotation* fa = frameAnnotations[i];
+	fa->setFace(center);
 
 	int expectedZone = fa->getSector();
 	counts[expectedZone - 1][5]++;
-
-	CvPoint faceCenter = fa->getFace();
-	if (!faceCenter.x && !faceCenter.y)
-	  fa->setFace(center);
 
 	// compose filename and update map
 	char buffer[256];

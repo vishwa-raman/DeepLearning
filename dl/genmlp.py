@@ -338,7 +338,7 @@ class ProgressiveMLP(object):
         """
         data_x, data_y = data_xy
         index = miniBatchIndex / self.getNumberOfSplitBatches()
-        print '    Returning data_xy[%d].'%(index)
+#        print '    Returning data_xy[%d].'%(index)
         return data_x[index], data_y[index]
 
     def splitList(self, data_xy):
@@ -604,7 +604,7 @@ class ProgressiveMLP(object):
         print '... training'
 
         # early-stopping parameters
-        patience = 1000       # look as this many examples regardless
+        patience = 20000       # look as this many examples regardless
         patience_increase = 2  # wait this much longer when a new best is
                                # found
         improvement_threshold = 0.995  # a relative improvement of this much is
@@ -633,7 +633,7 @@ class ProgressiveMLP(object):
 #                    %(actualMiniBatchIndex, minibatchIndex)
                 if (actualMiniBatchIndex == 0):
                     data_x, data_y = self.getWindowData(trainSet, minibatchIndex)
-                    print '     Update. data_x[0][0] = %f, data_y[0] = %d.'%(data_x[0][0], data_y[0])
+#                    print '     Update. data_x[0][0] = %f, data_y[0] = %d.'%(data_x[0][0], data_y[0])
                     trainSet_x.set_value(data_x, borrow=True)
                     trainSet_y.set_value(numpy.asarray(data_y,
                                                        dtype=theano.config.floatX),
